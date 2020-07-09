@@ -1,9 +1,18 @@
 #include "stm32f4xx.h"
+#include "arm_math.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "math.h"
 #include "stdio.h"
+#include "stdbool.h"
 #include "stm32f4xx_usart.h"
+
+#define __FPU_PRESENT
+#define __FPU_USED
+#define ARM_MATH_CM4
+#define __CC_ARM
+#define ARM_MATH_MATRIX_CHECK
+#define ARM_MATH_ROUNDING
 
 // Macro to use CCM (Core Coupled Memory) in STM32F4
 #define CCM_RAM __attribute__((section(".ccmram")))
@@ -26,6 +35,8 @@ StaticTask_t ledTaskBuffer3 CCM_RAM;  // Put TCB in CCM
 StackType_t ledTaskStack4[LED_TASK_STACK_SIZE] CCM_RAM;  // Put task stack in CCM
 StaticTask_t ledTaskBuffer4 CCM_RAM;  // Put TCB in CCM
 
+
+bool button_flag = false;
 
 void init_USART3(void);
 
@@ -55,10 +66,46 @@ void Init_LED()
    GPIO_Init(GPIOD, &GPIO_InitStruct);   
 }
 
+void EXTILine0_Config(void)
+{
+   EXTI_InitTypeDef   EXTI_InitStructure;
+   GPIO_InitTypeDef   GPIO_InitStructure;
+   NVIC_InitTypeDef   NVIC_InitStructure;
+
+   /* Enable GPIOA clock */
+   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+   /* Enable SYSCFG clock */
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
+   /* Configure PA0 pin as input floating */
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+   GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+   /* Connect EXTI Line0 to PA0 pin */
+   SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA, EXTI_PinSource0);
+
+   /* Configure EXTI Line0 */
+   EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+   EXTI_Init(&EXTI_InitStructure);
+
+   /* Enable and set EXTI Line0 Interrupt to the lowest priority */
+   NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0xFF;
+   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0xFF;
+   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+   NVIC_Init(&NVIC_InitStructure);
+}
+
 int main(void) {
    SystemInit();
    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
    Init_LED();
+   EXTILine0_Config();
    init_USART3();
 
    // Create a task
@@ -151,11 +198,23 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 }
 
 void test_FPU_test(void* p) {
-   float ff = 1.0f;
+   static float mul = 1.0f;
+   float x = 0.0f;
    printf("Start FPU test task.\n");
-   for (;;) {
-      float s = sinf(ff);
-      ff += s;
+   while(1){
+      while(button_flag){
+	 button_flag = false;
+	 printf("Push Button\n");
+	 mul += 1.0f;
+	 if(mul > 10.0f){mul = 0;}
+	 vTaskDelay(100/portTICK_PERIOD_MS);
+      }    
+      //float s = arm_sin_f32(ff);//sinf(ff);
+      float y1 = mul * sinf(x * 3.14159f/180.0f);
+      float y2 = mul * arm_sin_f32(x * 3.14159f/180.0f);
+      x++;
+      if(x>360){x=0;}
+      printf("%.2f , %.2f\n",y1,y2);
       // TODO some other test
 
       vTaskDelay(1/portTICK_PERIOD_MS);
@@ -233,4 +292,12 @@ void init_USART3(void) {
    USART_InitStruct.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
    USART_Init(USART3, &USART_InitStruct);
    USART_Cmd(USART3, ENABLE);
+}
+
+void EXTI0_IRQHandler(void)
+{
+   if( EXTI_GetITStatus( EXTI_Line0 ) != RESET ){
+      button_flag = true;
+   }
+   EXTI_ClearITPendingBit( EXTI_Line0 );
 }

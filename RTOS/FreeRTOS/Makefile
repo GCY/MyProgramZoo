@@ -17,6 +17,8 @@ INCLUDE+=-I$(FREERTOS)/include
 INCLUDE+=-I$(FREERTOS)/portable/GCC/ARM_CM4F
 INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Device/ST/STM32F4xx/Include
 INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/Include
+INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/DSP_Lib/Source/CommonTables
+INCLUDE+=-I$(CURDIR)/Libraries/CMSIS/DSP_Lib/Source/FastMathFunctions
 INCLUDE+=-I$(CURDIR)/Libraries/STM32F4xx_StdPeriph_Driver/inc
 INCLUDE+=-I$(CURDIR)/config
 
@@ -37,6 +39,9 @@ SRC+=stm32f4xx_it.c
 SRC+=system_stm32f4xx.c
 SRC+=main.c
 SRC+=syscalls.c
+
+SRC+=arm_common_tables.c
+SRC+=arm_sin_f32.c
 
 # FreeRTOS Source Files
 SRC+=port.c
