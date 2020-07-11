@@ -88,10 +88,15 @@ void my_camera_show(void)
         oldpixel = fb-> buf [i]; //保持原始的灰度值
         newpixel =(255 *(oldpixel >> 7)); //门槛值128
         fb-> buf [i] = newpixel; //凸轮缓冲区现在是单声道，0或255
-    
+
         // floyd-steignburg抖动：
         quanterror = oldpixel  -  newpixel; //像素之间的误差
-    
+
+        //Dithering
+        //      a = (err * 7) / 16;
+        //      b = (err * 1) / 16;
+        //      c = (err * 5) / 16;
+        //      d = (err * 3) / 16;
         //将此错误分发给相邻像素：
     
        //右
@@ -108,7 +113,7 @@ void my_camera_show(void)
           }
     
           //下
-          if(y <63)//边界检查...
+          if(y <(SCREEN_HEIGHT-1))//边界检查...
           {
              fb-> buf [(x)+((y + 1)* SCREEN_WIDTH)] ==((quanterror * 5)>> 4);
           }
