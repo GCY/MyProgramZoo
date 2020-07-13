@@ -15,7 +15,7 @@ SOURCE_HTTPS = main.https.cpp
 OBJECTS_HTTP = main.http.o
 OBJECTS_HTTPS =  main.https.o
 
-LDFLAGS_COMMON = -std=c++2a -O3 -pthread -lboost_system
+LDFLAGS_COMMON = -std=c++1z -O3 -pthread -lboost_system
 LDFLAGS_HTTP =
 LDFLAGS_HTTPS = -lssl -lcrypto
 
