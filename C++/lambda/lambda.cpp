@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <utility>
 
 // mutable example
 class HashTable {
@@ -71,6 +72,11 @@ T sum_pack(const T& first, const Args&... args)
    return first + sum_pack(args...);
 }
 
+template <typename... Types>
+auto sum_pack_v2(Types&&... xs) {
+  return (... + std::forward<Types&&>(xs));
+}
+
 // lambda tempalte pack param
 void print_pack() {}
    template <typename First>
@@ -125,7 +131,8 @@ int main(void)
    constexpr int answer = sum(10, 10); 
    std::cout << "ans: " << answer << std::endl;
 
-   std::cout << sum_pack(1, 2, 3, 4, 5) << std::endl;
+   std::cout << "sum_pack: " << sum_pack(1, 2, 3, 4, 5) << std::endl;
+   std::cout << "sum_pack_v2: " << sum_pack_v2(11, 22, 33, 44, 55) << std::endl;
 
    // lambda tempalte pack param
    auto variadic_generic_lambda = [](auto... param) {
