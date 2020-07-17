@@ -57,7 +57,33 @@ class Example
       }  
    private:  
       int m_var = { [](){return 100;}() };  
-}; 
+};
+
+// tempalte pack param
+   template<typename T>
+T sum_pack(const T& first)
+{
+   return first;
+}
+   template<typename T, typename... Args>
+T sum_pack(const T& first, const Args&... args)
+{
+   return first + sum_pack(args...);
+}
+
+// lambda tempalte pack param
+void print_pack() {}
+   template <typename First>
+void print_pack(const First& first)
+{
+   std::cout << first << std::endl;
+}
+   template <typename First, typename... Rest>
+void print_pack(const First& first, Rest&&... args)
+{
+   std::cout << first << ",";
+   print_pack(args...);
+}
 
 int main(void)
 {
@@ -67,7 +93,7 @@ int main(void)
    };  
    print();  
 
-   auto Lambda_func = [i = 0]() mutable { return i++; };  
+   auto Lambda_func = [i = 0]() mutable noexcept { return i++; };  
    f(Lambda_func); // Pass Lambda  
    f(g);           // Pass function  
 
@@ -98,5 +124,14 @@ int main(void)
    constexpr auto sum = [](const auto &a, const auto &b) { return a + b; };
    constexpr int answer = sum(10, 10); 
    std::cout << "ans: " << answer << std::endl;
+
+   std::cout << sum_pack(1, 2, 3, 4, 5) << std::endl;
+
+   // lambda tempalte pack param
+   auto variadic_generic_lambda = [](auto... param) {
+      print_pack(param...);
+   };
+   variadic_generic_lambda(1.2, "test", 1.1); 
+   //print_pack("test",1.2, 1.1, 1.1);
    return 0;  
 }
