@@ -15,7 +15,7 @@ class Animal_CRTP: public Animal {
 	 static_cast<const T*>(this)->say();
       }
 
-   // safe lock
+   // safe lock, example BigDog
    private:
       Animal_CRTP(){}
       friend T;    
@@ -35,6 +35,22 @@ class Dog: public Animal_CRTP<Dog> {
       }
 };
 
+// default constructor of 'BigDog' is implicitly deleted because base class 'Animal_CRTP<Dog>' has an inaccessible default
+/*
+class BigDog: public Animal_CRTP<Dog> {
+   public:
+      void say() const {
+	 std::cout << "Wang~ I'm a BigDog." << std::endl;
+      }
+};
+*/
+class BigDog: public Animal_CRTP<BigDog> {
+   public:
+      void say() const {
+	 std::cout << "Wang~ I'm a BigDog." << std::endl;
+      }
+};
+
 int main(int argc,char**argv)
 {
 
@@ -42,6 +58,7 @@ int main(int argc,char**argv)
    std::vector<Animal*> zoo;
    zoo.push_back(new Cat());
    zoo.push_back(new Dog());
+   zoo.push_back(new BigDog());
    for (std::vector<Animal*>::const_iterator iter = zoo.begin(); iter != zoo.end(); ++iter) {
       (*iter)->say();
    }
