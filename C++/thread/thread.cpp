@@ -76,6 +76,8 @@ struct bank_account
 
 void transfer( bank_account &from, bank_account &to, int amount )
 {
+   // try to block lock
+
    // don't actually take the locks yet
    std::unique_lock<std::mutex> lock1( from.mMutex, std::defer_lock );
    std::unique_lock<std::mutex> lock2( to.mMutex, std::defer_lock );
@@ -95,6 +97,8 @@ void transfer( bank_account &from, bank_account &to, int amount )
    // output log
    std::cout << "Transfer " << amount << " from " 
       << from.sName << " to " << to.sName << std::endl;
+   std::cout << from.sName << ": " << from.iMoney
+      << " " << to.sName  << ": " << to.iMoney << std::endl;   
 }
 
 std::recursive_mutex once_mutex;
@@ -136,16 +140,44 @@ void worker_thread()
 }
 
 typedef struct{
-  std::mutex m;
-  int data;
+   std::mutex m;
+   int data;
 }Node;
+/* std::scoped_lock implementation */
+void lock_impl(std::mutex &x, std::mutex &y) {
+   while (true) {
+      if (x.try_lock()) {
+	 if (y.try_lock()) {
+	    return;
+	 }
+	 x.unlock();
+      }
+
+      sched_yield();  // implementation-defined
+
+      if (y.try_lock()) {
+	 if (x.try_lock()) {
+	    return;
+	 }
+	 y.unlock();
+      }
+
+      sched_yield();  // implementation-defined
+   }
+}
 void my_swap(Node &lhs, Node &rhs) {
-  if (&lhs == &rhs) return;
-  std::unique_lock<std::mutex> lhs_lock( lhs.m, std::defer_lock );
-  std::unique_lock<std::mutex> rhs_lock( rhs.m, std::defer_lock );  
-  
-  std::lock( lhs_lock, rhs_lock );
-  std::swap(lhs.data, rhs.data);
+   if (&lhs == &rhs) return;
+
+   //std::scoped_lock(lhs.m, rhs.m);
+
+   lock_impl(lhs.m, rhs.m);
+
+   /*
+      std::unique_lock<std::mutex> lhs_lock( lhs.m, std::defer_lock );
+      std::unique_lock<std::mutex> rhs_lock( rhs.m, std::defer_lock );  
+      std::lock( lhs_lock, rhs_lock );
+      */
+   std::swap(lhs.data, rhs.data);
 }
 void func_swap()
 {
@@ -245,7 +277,7 @@ int main() {
    worker.join();
 
 
-   //
+   //std::scoped_lock
    func_swap();
 
    return 0;
