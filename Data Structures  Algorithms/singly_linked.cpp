@@ -36,7 +36,7 @@ class Link
       }
 
       Link(const Link&) = delete;
-      void operator=(const Link&) = delete;
+      Link& operator=(const Link&) = delete;
 
       void PushBack(T data) noexcept;
       void PushFront(T data) noexcept;
@@ -165,6 +165,9 @@ void Link<T>::Insert(uint32_t index,T data) noexcept
 
 int main( int argc, char** argv )
 {
+   std::ios::sync_with_stdio(false);
+   std::cin.tie(0);
+
    Link<uint32_t> link;
    //std::cout << link.GetData() << " " << link.GetAddress() << std::endl;
    for(uint32_t i = 1;i <= 10;++i){
