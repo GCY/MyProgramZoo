@@ -59,8 +59,9 @@ int32_t Partition_v2(std::vector<int> &array,uint32_t front,uint32_t end)
       }
    }
 
-   swap(array,i+1,end);
-   return i+1;
+   ++i;
+   swap(array,i,end);
+   return i;
 }
 
 void quick_sort_v2(std::vector<int> &array,uint32_t front,uint32_t end)
@@ -80,7 +81,7 @@ int main( int argc, char** argv )
 
 
    std::vector<int> array;
-   array.reserve(30);
+   array.reserve(10);
 
    for(size_t i = 0;i < array.capacity();++i){
       array.push_back(dis(gen));
